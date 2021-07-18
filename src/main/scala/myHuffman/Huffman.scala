@@ -10,6 +10,8 @@ case class Leaf(char: Char, weight: Int) extends CodeTree
 
 trait Huffman extends HuffmanInterface {
 
+  type Bit = Byte
+
   def weight(tree: CodeTree): Int = {
     tree match {
       case Leaf(_, w1) => w1
@@ -56,7 +58,11 @@ trait Huffman extends HuffmanInterface {
   }
 
   def singleton(trees: Vector[CodeTree]): Boolean = {
-    if (trees.isEmpty) { false } else { trees.tail.isEmpty }
+    if (trees.isEmpty) {
+      false
+    } else {
+      trees.tail.isEmpty
+    }
   }
 
   def combine(trees: Vector[CodeTree]): Vector[CodeTree] = {
@@ -78,8 +84,6 @@ trait Huffman extends HuffmanInterface {
   def createCodeTree(chars: Vector[Char]): CodeTree = {
     until(singleton, combine)(makeOrderedLeafList(times(chars))).head
   }
-
-  type Bit = Byte
 
   def decode(tree: CodeTree, bits: Vector[Bit]): Vector[Char] = {
     decodeHelper(tree, tree, bits)
@@ -115,13 +119,13 @@ trait Huffman extends HuffmanInterface {
       encodeOneChar(tree)(x) ++ encode(tree)(y)
     }
   }
-  
-  def encodeOneChar(tree: CodeTree)(c: Char) : Vector[Bit] = {
+
+  def encodeOneChar(tree: CodeTree)(c: Char): Vector[Bit] = {
     tree match {
       case Fork(left, right, _, _) =>
         left match {
           case Fork(_, _, l_chars, _) =>
-            if (l_chars.contains(c)){
+            if (l_chars.contains(c)) {
               0.toByte +: encodeOneChar(left)(c)
             } else {
               1.toByte +: encodeOneChar(right)(c)
@@ -137,7 +141,7 @@ trait Huffman extends HuffmanInterface {
 
       case Leaf(_, _) => Vector.empty
     }
-    
   }
 }
+
 object Huffman extends Huffman

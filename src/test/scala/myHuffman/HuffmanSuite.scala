@@ -3,7 +3,7 @@ package myHuffman
 class HuffmanSuite extends munit.FunSuite {
 
   val yourTree: String = "AAA YXY"
-  val huffmanTest1 = new HuffmanLib(yourTree)
+  val huffmanTest1 = HuffmanLib(yourTree)
 
   val testInput: String = "AXAX "
   val encoded = huffmanTest1.encode(testInput)
