@@ -110,7 +110,8 @@ trait Huffman extends HuffmanInterface {
     if (freqs.isEmpty) {
       Vector.empty
     } else {
-      insert(freqs.head, makeOrderedLeafList(freqs.tail))
+      //insert(freqs.head, makeOrderedLeafList(freqs.tail))
+      freqs.map(p => Leaf(p._1, p._2)).sortWith((r1, r2) => weight(r1) < weight(r2))
     }
   }
 
@@ -118,7 +119,7 @@ trait Huffman extends HuffmanInterface {
     if (y.isEmpty) {
       Vector(Leaf(x._1, x._2))
     } else {
-      if (x._2 < y.head.weight) {
+      if (x._2 < weight(y.head)) {
         Leaf(x._1, x._2) +: y
       } else {
         y.head +: insert(x, y.tail)
@@ -149,8 +150,9 @@ trait Huffman extends HuffmanInterface {
     if (trees.isEmpty || singleton(trees)) {
       trees
     } else {
-      var z = makeCodeTree(trees.head, trees.tail.head)
-      newInsert(z, trees.filter(y => weight(y) > weight(trees.tail.head)))
+//      var z = makeCodeTree(trees.head, trees.tail.head)
+//      newInsert(z, trees.filter(y => weight(y) > weight(trees.tail.head)))
+      (makeCodeTree(trees.head, trees.tail.head) +: trees.tail.tail).sortWith((x, y) => weight(x) < weight(y))
     }
   }
 
@@ -220,9 +222,9 @@ trait Huffman extends HuffmanInterface {
         }
 
       case Fork(left, right, chars, weight) =>
-        if (bits.head == 0) {
+        if (bits.head == 0.toByte) {
           decodeHelper(mainTree, left, bits.tail)
-        } else if (bits.head == 1) {
+        } else if (bits.head == 1.toByte) {
           decodeHelper(mainTree, right, bits.tail)
         } else {
           throw new InputMismatchException()

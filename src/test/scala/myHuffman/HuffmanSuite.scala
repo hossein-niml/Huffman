@@ -14,11 +14,12 @@ class HuffmanSuite extends munit.FunSuite {
     }
   }
 
-  val yourTree: String = "AAAAABBBC"
+  val yourTree: String = "AAA YXY"
   var huffmanTest1 = new HuffmanLib(yourTree)
+  val encoded = huffmanTest1.myEncode(yourTree.toVector)
+  val decoded = huffmanTest1.myDecode(encoded)
 
-  testMe(huffmanTest1, Vector(0, 1))
-  testMe(huffmanTest1, Vector(1, 1, 1))
-  testMe(huffmanTest1, Vector(0, 1, 0, 0, 1))
-  testMe(huffmanTest1, Vector(0, 0, 1, 0, 0))
+  test("This is a test"){
+    assertEquals(decoded, yourTree.toVector)
+  }
 }
