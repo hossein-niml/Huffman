@@ -1,9 +1,5 @@
 package myHuffman
 
-/**
- * The interface used by the grading infrastructure. Do not change signatures
- * or your submission will fail with a NoSuchMethodError.
- */
 trait HuffmanInterface {
   def weight(tree: CodeTree): Int
 
@@ -23,15 +19,5 @@ trait HuffmanInterface {
 
   def decode(tree: CodeTree, bits: Vector[Byte]): Vector[Char]
 
-  def decodedSecret: Vector[Char]
-
   def encode(tree: CodeTree)(text: Vector[Char]): Vector[Byte]
-
-  def convert(tree: CodeTree): Vector[(Char, Vector[Byte])]
-
-  def quickEncode(tree: CodeTree)(text: Vector[Char]): Vector[Byte]
-
-  def frenchCode: CodeTree
-
-  def secret: Vector[Byte]
 }

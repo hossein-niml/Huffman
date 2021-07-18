@@ -10,21 +10,15 @@ class HuffmanLib(val myStr: String) {
   }
 
   def getTree(): CodeTree = {
-    return thisTree
+    thisTree
   }
 
-  def myDecode(bits: Vector[Bit]): Vector[Char] = {
-    decode(thisTree, bits)
+  def decode(bits: Vector[Bit]): String = {
+    Huffman.decode(thisTree, bits).mkString
   }
 
-  def myEncode(str: Vector[Char]): Vector[Bit] = {
-    encode(thisTree)(str)
+  def encode(str: String): Vector[Bit] = {
+    Huffman.encode(thisTree)(str.toVector)
   }
 
 }
-
-//object HuffmanLib {
-//  def apply(str: String): HuffmanLib ={
-//    new HuffmanLib(createCodeTree(str.toVector))
-//  }
-//}
