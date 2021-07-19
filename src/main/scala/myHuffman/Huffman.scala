@@ -85,38 +85,75 @@ trait Huffman extends HuffmanInterface {
     until(singleton, combine)(makeOrderedLeafList(times(chars))).head
   }
 
-  def decode(tree: CodeTree, bits: Vector[Bit]): Vector[Char] = {
-    decodeHelper(tree, tree, bits)
-  }
-
-  def decodeHelper(mainTree: CodeTree, tree: CodeTree, bits: Vector[Bit]): Vector[Char] = {
-    tree match {
-
-      case Leaf(char, _) =>
-        if (bits.isEmpty) {
-          Vector(char)
-        } else {
-          char +: decodeHelper(mainTree, mainTree, bits)
-        }
-
-      case Fork(left, right, _, _) =>
-        if (bits.head == 0.toByte) {
-          decodeHelper(mainTree, left, bits.tail)
-        } else if (bits.head == 1.toByte) {
-          decodeHelper(mainTree, right, bits.tail)
-        } else {
-          throw new InputMismatchException()
-        }
+  def decode(tree: CodeTree, bits: Vector[Int], bitsCount: Vector[Int]): Vector[Char] = {
+    if (bits.isEmpty) {
+      Vector.empty
+    } else {
+      decodeHelper(tree, tree, bits.head, bitsCount.head) ++ decode(tree, bits.tail, bitsCount.tail)
     }
   }
 
-  def encode(tree: CodeTree)(text: Vector[Char]): Vector[Bit] = {
-    if (text.isEmpty) {
+  def bitsOfInt(inp: Int, i: Int): Int = {
+    if((1 << i) > inp){
+      i - 1
+    } else {
+      bitsOfInt(inp, i+1)
+    }
+  }
+
+  def decodeHelper(mainTree: CodeTree, tree: CodeTree, bits: Int, bc: Int): Vector[Char] = {
+    if (bc < 0) {
       Vector.empty
+    } else {
+      tree match {
+        case Leaf(char, _) =>
+          char +: decodeHelper(mainTree, mainTree, bits, bc)
+
+        case Fork(left, right, _, _) =>
+          val shiftTest = 1 << (bc - 1)
+          if ( (shiftTest & bits) != shiftTest) {
+            decodeHelper(mainTree, left, bits, bc - 1)
+          } else if ( (shiftTest & bits) == shiftTest) {
+            decodeHelper(mainTree, right, bits, bc - 1)
+          } else {
+            throw new InputMismatchException()
+          }
+      }
+    }
+  }
+
+  def bitCount(tree: CodeTree, text: Vector[Char]): Int = {
+    if (text.isEmpty) {
+      0
+    } else {
+      val head = text.head
+      val tail = text.tail
+      encodeOneChar(tree)(head).size + bitCount(tree, tail)
+    }
+  }
+
+  def shift(rev: Vector[Bit], i: Int): Int = {
+    if (rev.isEmpty) {
+      0
+    } else {
+      val head = rev.head
+      val tail = rev.tail
+      (head << i) + shift(tail, i + 1)
+    }
+  }
+
+  def valueOfOneChar(tree: CodeTree, char: Char, bitsOfRest: Int): Int = {
+    val myVec = encodeOneChar(tree)(char)
+    shift(myVec.reverse, bitsOfRest)
+  }
+
+  def encode(tree: CodeTree)(text: Vector[Char]): Int = {
+    if (text.isEmpty) {
+      0
     } else {
       val x = text.head
       val y = text.tail
-      encodeOneChar(tree)(x) ++ encode(tree)(y)
+      valueOfOneChar(tree, x, bitCount(tree, y)) + encode(tree)(y)
     }
   }
 

@@ -2,15 +2,17 @@ package myHuffman
 
 class HuffmanSuite extends munit.FunSuite {
 
-  val yourTree: String = "AAA YXY"
-  val huffmanTest1 = HuffmanLib(yourTree)
+  val yourTree: String = "AAABBC"
+  val huffmanTest1: HuffmanLib = HuffmanLib(yourTree)
 
-  val testInput: String = "AXAX "
-  val encoded = huffmanTest1.encode(testInput)
-  val decoded = huffmanTest1.decode(encoded)
+  val testInput: String = (0 to 50 map(_ => "A")).mkString
+  val myTest: String = "ACAAB"
+
+  val encoded: Vector[Int] = huffmanTest1.encode(myTest)
+
+  val decoded: String = huffmanTest1.decode(encoded)
 
   test("This is a test"){
-    assertEquals(decoded, testInput)
+    assertEquals(decoded, myTest)
   }
-
 }

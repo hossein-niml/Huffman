@@ -17,7 +17,7 @@ trait HuffmanInterface {
 
   def createCodeTree(chars: Vector[Char]): CodeTree
 
-  def decode(tree: CodeTree, bits: Vector[Byte]): Vector[Char]
+  def decode(tree: CodeTree, bits: Vector[Int], bitsCount: Vector[Int]): Vector[Char]
 
-  def encode(tree: CodeTree)(text: Vector[Char]): Vector[Byte]
+  def encode(tree: CodeTree)(text: Vector[Char]): Int
 }
