@@ -8,7 +8,7 @@ class HuffmanSuite extends munit.FunSuite {
   val testInput: String = (0 to 50 map(_ => "A")).mkString
   val myTest: String = "ACAAB"
 
-  val encoded: Vector[Int] = huffmanTest1.encode(myTest)
+  val encoded: huffmanTest1.encodeResult = huffmanTest1.encode(myTest)
 
   val decoded: String = huffmanTest1.decode(encoded)
 
