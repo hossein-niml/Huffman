@@ -5,7 +5,7 @@ class HuffmanSuite extends munit.FunSuite {
   val yourTree: String = "AAABBC"
   val huffmanTest1: Huffman = Huffman(yourTree)
 
-  val testInput: String = (0 to 50 map(_ => "A")).mkString
+  val testInput: String = (0 to 66 map(_ => "A")).mkString
   val myTest: String = "ACAAB"
 
   val encoded: Huffman.EncodeResult = huffmanTest1.encode(myTest)

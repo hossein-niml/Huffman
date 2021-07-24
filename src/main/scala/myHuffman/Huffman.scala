@@ -9,18 +9,18 @@ class Huffman(myStr: String) {
 
   private val thisTree: CodeTree = createCodeTree(myStr.toVector)
 
+  //public methods
   def getTree: CodeTree = thisTree
 
   def encode(str: String): EncodeResult = {
     val myVec = str.toVector
     val myBits = bitCount(thisTree, myVec)
     if (myBits <= INT_MAX_INDEX) {
-      EncodeResult(Vector(encoder(thisTree)(myVec)), Vector(bitCount(thisTree, myVec)))
+      EncodeResult(Vector(encoder(thisTree)(myVec)), Vector(myBits))
     } else {
-      val sliceIndex = findBestSliceIndex(thisTree, myVec, myVec.size, 0)
-      val vecToEncode = myVec.take(sliceIndex)
+      val vecToEncode = myVec.take(INT_MAX_INDEX)
       val encoded = encoder(thisTree)(vecToEncode)
-      val tailEncode = encode(myVec.drop(sliceIndex).mkString)
+      val tailEncode = encode(myVec.drop(INT_MAX_INDEX).mkString)
       EncodeResult(encoded +: tailEncode.encoded, bitCount(thisTree, vecToEncode) +: tailEncode.bitsCount)
     }
   }
@@ -29,6 +29,7 @@ class Huffman(myStr: String) {
     decoder(thisTree, encoded.encoded, encoded.bitsCount).mkString
   }
 
+  //private methods
   private def weight(tree: CodeTree): Int = {
     tree match {
       case Leaf(_, w1) => w1
@@ -108,25 +109,39 @@ class Huffman(myStr: String) {
     if (bits.isEmpty) {
       Vector.empty
     } else {
-      decoderHelper(tree, tree, bits.head, bitsCount.head) ++ decoder(tree, bits.tail, bitsCount.tail)
+      decoderHelper(tree, tree, bits, bitsCount, bitsCount.head)
     }
   }
 
 
-  private def decoderHelper(mainTree: CodeTree, tree: CodeTree, bits: Int, bc: Int): Vector[Char] = {
-    if (bc < 0) {
-      Vector.empty
+  private def decoderHelper(mainTree: CodeTree, tree: CodeTree, bits: Vector[Int], bitsCount: Vector[Int], bc: Int): Vector[Char] = {
+    if (bc == 0) {
+      tree match {
+        case Leaf(char, _) =>
+          if (bits.size > 1) {
+            char +: decoderHelper(mainTree, mainTree, bits.tail, bitsCount.tail, bitsCount.tail.head)
+          } else {
+            Vector(char)
+          }
+
+        case Fork(_, _, _, _) =>
+          if (bits.size > 1) {
+            decoderHelper(mainTree, tree, bits.tail, bitsCount.tail, bitsCount.tail.head)
+          } else {
+            throw new InputMismatchException()
+          }
+      }
     } else {
       tree match {
         case Leaf(char, _) =>
-          char +: decoderHelper(mainTree, mainTree, bits, bc)
+          char +: decoderHelper(mainTree, mainTree, bits, bitsCount, bc)
 
         case Fork(left, right, _, _) =>
           val shiftTest = 1 << (bc - 1)
-          if ((shiftTest & bits) != shiftTest) {
-            decoderHelper(mainTree, left, bits, bc - 1)
-          } else if ((shiftTest & bits) == shiftTest) {
-            decoderHelper(mainTree, right, bits, bc - 1)
+          if ((shiftTest & bits.head) != shiftTest) {
+            decoderHelper(mainTree, left, bits, bitsCount, bc - 1)
+          } else if ((shiftTest & bits.head) == shiftTest) {
+            decoderHelper(mainTree, right, bits, bitsCount, bc - 1)
           } else {
             throw new InputMismatchException()
           }
@@ -192,19 +207,6 @@ class Huffman(myStr: String) {
     }
   }
 
-  @tailrec
-  private def findBestSliceIndex(tree: CodeTree, vec: Vector[Char], size: Int, i: Int): Int = {
-    val numOfBits = bitCount(tree, vec)
-    val revVec = vec.reverse
-    val head = revVec.head
-    val headBits = bitCount(tree, Vector(head))
-    if (numOfBits - headBits <= INT_MAX_INDEX) {
-      size - i - 1
-    } else {
-      findBestSliceIndex(tree, revVec.tail.reverse, size, i + 1)
-    }
-  }
-
 }
 
 object Huffman {
@@ -224,4 +226,5 @@ object Huffman {
   case class Leaf(char: Char, weight: Int) extends CodeTree
 
   case class EncodeResult(encoded: Vector[Int], bitsCount: Vector[Int])
+
 }
