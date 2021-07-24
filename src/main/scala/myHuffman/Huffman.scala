@@ -16,12 +16,12 @@ class Huffman(myStr: String) {
     val myVec = str.toVector
     val myBits = bitCount(thisTree, myVec)
     if (myBits <= INT_MAX_INDEX) {
-      EncodeResult(Vector(encoder(thisTree)(myVec)), Vector(myBits))
+      EncodeResult(Vector(encoder(thisTree)(myVec)), myBits)
     } else {
       val vecToEncode = myVec.take(INT_MAX_INDEX)
       val encoded = encoder(thisTree)(vecToEncode)
       val tailEncode = encode(myVec.drop(INT_MAX_INDEX).mkString)
-      EncodeResult(encoded +: tailEncode.encoded, bitCount(thisTree, vecToEncode) +: tailEncode.bitsCount)
+      EncodeResult(encoded +: tailEncode.encoded, tailEncode.bitsCount)
     }
   }
 
@@ -105,28 +105,40 @@ class Huffman(myStr: String) {
     until(singleton, combine)(makeOrderedLeafList(times(chars))).head
   }
 
-  private def decoder(tree: CodeTree, bits: Vector[Int], bitsCount: Vector[Int]): Vector[Char] = {
+  private def decoder(tree: CodeTree, bits: Vector[Int], bitsCount: Int): Vector[Char] = {
     if (bits.isEmpty) {
       Vector.empty
     } else {
-      decoderHelper(tree, tree, bits, bitsCount, bitsCount.head)
+      if (bits.size == 1) {
+        decoderHelper(tree, tree, bits, bitsCount, bitsCount)
+      } else {
+        decoderHelper(tree, tree, bits, bitsCount, INT_MAX_INDEX)
+      }
     }
   }
 
 
-  private def decoderHelper(mainTree: CodeTree, tree: CodeTree, bits: Vector[Int], bitsCount: Vector[Int], bc: Int): Vector[Char] = {
+  private def decoderHelper(mainTree: CodeTree, tree: CodeTree, bits: Vector[Int], bitsCount: Int, bc: Int): Vector[Char] = {
     if (bc == 0) {
       tree match {
         case Leaf(char, _) =>
           if (bits.size > 1) {
-            char +: decoderHelper(mainTree, mainTree, bits.tail, bitsCount.tail, bitsCount.tail.head)
+            if (bits.tail.size == 1) {
+              char +: decoderHelper(mainTree, mainTree, bits.tail, bitsCount, bitsCount)
+            } else {
+              char +: decoderHelper(mainTree, mainTree, bits.tail, bitsCount, INT_MAX_INDEX)
+            }
           } else {
             Vector(char)
           }
 
         case Fork(_, _, _, _) =>
           if (bits.size > 1) {
-            decoderHelper(mainTree, tree, bits.tail, bitsCount.tail, bitsCount.tail.head)
+            if (bits.tail.size == 1) {
+              decoderHelper(mainTree, tree, bits.tail, bitsCount, bitsCount)
+            } else {
+              decoderHelper(mainTree, tree, bits.tail, bitsCount, INT_MAX_INDEX)
+            }
           } else {
             throw new InputMismatchException()
           }
@@ -219,12 +231,12 @@ object Huffman {
 
   val INT_MAX_INDEX = 32
 
-  abstract class CodeTree
+  sealed abstract class CodeTree
 
   case class Fork(left: CodeTree, right: CodeTree, chars: Vector[Char], weight: Int) extends CodeTree
 
   case class Leaf(char: Char, weight: Int) extends CodeTree
 
-  case class EncodeResult(encoded: Vector[Int], bitsCount: Vector[Int])
+  case class EncodeResult(encoded: Vector[Int], bitsCount: Int)
 
 }
