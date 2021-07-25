@@ -18,4 +18,6 @@ class HuffmanSuite extends munit.FunSuite {
   tester(tree = "I think This program works so good", testInput = "IwTh tnkgdooo oogImmppkk kkkkkk")
   tester(tree = "bbbbrrrdu lets check the final test and we most pass it", testInput = "final test is the most important test and should be passed")
   tester(tree = "i want to push it on github", testInput = "push github push github push github push github push github")
+  tester(tree = "calL of duty AssASSIn CreED", testInput = "r call call assassIn ASSASSIn creed CrEED")
 }
+

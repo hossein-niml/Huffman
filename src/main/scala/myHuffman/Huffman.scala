@@ -13,7 +13,7 @@ class Huffman(myStr: String) {
   def getTree: CodeTree = thisTree
 
   def encode(str: String): EncodeResult = {
-    EncodeResult(processEncoder(str.toVector, pointer = 1, Vector(0)), strBitCounter(str))
+    processEncoder(str.toVector, pointer = 1, Vector(0), reminder = 0, firstTime = true)
   }
 
   def decode(encoded: EncodeResult): String = {
@@ -21,15 +21,6 @@ class Huffman(myStr: String) {
   }
 
   //private methods
-  private def strBitCounter(str: String): Int = {
-    val reminder = bitCount(thisTree, str.toVector) % INT_MAX_INDEX
-    if (reminder != 0) {
-      reminder
-    } else {
-      INT_MAX_INDEX
-    }
-  }
-
   @tailrec
   private def mergeTwoInt(n: Int, bc: Int, pointer: Int, current: Vector[Int]): Vector[Int] = {
     if (bc == 0) {
@@ -46,21 +37,24 @@ class Huffman(myStr: String) {
   }
 
   @tailrec
-  private def processEncoder(text: Vector[Char], pointer: Int, current: Vector[Int]): Vector[Int] = {
+  private def processEncoder(text: Vector[Char], pointer: Int, current: Vector[Int], reminder: Int, firstTime: Boolean): EncodeResult = {
     if (text.isEmpty) {
-      current
+      EncodeResult(current, reminder)
     } else {
+      val textBitCountRem = bitCount(thisTree, text) % INT_MAX_INDEX
+      val countRem = if (textBitCountRem != 0) textBitCountRem else INT_MAX_INDEX
+      val nextReminder = if (firstTime) countRem else reminder
       val head = text.head
       val bc = bitCount(thisTree, Vector(head))
       val currentEncoded = mergeTwoInt(encoder(thisTree)(Vector(head)), bc, pointer, current)
       if (text.tail.isEmpty) {
-        currentEncoded
+        EncodeResult(currentEncoded, nextReminder)
       } else {
         val newPointer = if ((bc + pointer) % INT_MAX_INDEX != 0) (bc + pointer) % INT_MAX_INDEX else 32
         if (newPointer == 1) {
-          processEncoder(text.tail, newPointer, currentEncoded :+ 0)
+          processEncoder(text.tail, newPointer, currentEncoded :+ 0, nextReminder, firstTime = false)
         } else {
-          processEncoder(text.tail, newPointer, currentEncoded)
+          processEncoder(text.tail, newPointer, currentEncoded, nextReminder, firstTime = false)
         }
       }
     }
@@ -77,20 +71,20 @@ class Huffman(myStr: String) {
 
   private def weight(tree: CodeTree): Int = {
     tree match {
-      case Leaf(_, w1) => w1
-      case Fork(left, right, _, _) => weight(left) + weight(right)
+      case CodeTree.Leaf(_, w1) => w1
+      case CodeTree.Fork(left, right, _, _) => weight(left) + weight(right)
     }
   }
 
   private def chars(tree: CodeTree): Vector[Char] = {
     tree match {
-      case Leaf(c, _) => Vector(c)
-      case Fork(left, right, _, _) => chars(left) ++ chars(right)
+      case CodeTree.Leaf(c, _) => Vector(c)
+      case CodeTree.Fork(left, right, _, _) => chars(left) ++ chars(right)
     }
   }
 
   private def makeCodeTree(left: CodeTree, right: CodeTree): CodeTree = {
-    Fork(left, right, chars(left) ++ chars(right), weight(left) + weight(right))
+    CodeTree.Fork(left, right, chars(left) ++ chars(right), weight(left) + weight(right))
   }
 
   private def times(chars: Vector[Char]): Vector[(Char, Int)] = {
@@ -113,11 +107,11 @@ class Huffman(myStr: String) {
     }
   }
 
-  private def makeOrderedLeafList(freqs: Vector[(Char, Int)]): Vector[Leaf] = {
+  private def makeOrderedLeafList(freqs: Vector[(Char, Int)]): Vector[CodeTree.Leaf] = {
     if (freqs.isEmpty) {
       Vector.empty
     } else {
-      freqs.map(p => Leaf(p._1, p._2)).sortWith((r1, r2) => weight(r1) < weight(r2))
+      freqs.map(p => CodeTree.Leaf(p._1, p._2)).sortWith((r1, r2) => weight(r1) < weight(r2))
     }
   }
 
@@ -166,7 +160,7 @@ class Huffman(myStr: String) {
   private def decoderHelper(mainTree: CodeTree, tree: CodeTree, bits: Vector[Int], bitsCount: Int, bc: Int): Vector[Char] = {
     if (bc == 0) {
       tree match {
-        case Leaf(char, _) =>
+        case CodeTree.Leaf(char, _) =>
           if (bits.size > 1) {
             if (bits.tail.size == 1) {
               char +: decoderHelper(mainTree, mainTree, bits.tail, bitsCount, bitsCount)
@@ -177,7 +171,7 @@ class Huffman(myStr: String) {
             Vector(char)
           }
 
-        case Fork(_, _, _, _) =>
+        case CodeTree.Fork(_, _, _, _) =>
           if (bits.size > 1) {
             if (bits.tail.size == 1) {
               decoderHelper(mainTree, tree, bits.tail, bitsCount, bitsCount)
@@ -190,10 +184,10 @@ class Huffman(myStr: String) {
       }
     } else {
       tree match {
-        case Leaf(char, _) =>
+        case CodeTree.Leaf(char, _) =>
           char +: decoderHelper(mainTree, mainTree, bits, bitsCount, bc)
 
-        case Fork(left, right, _, _) =>
+        case CodeTree.Fork(left, right, _, _) =>
           val shiftTest = 1 << (bc - 1)
           if ((shiftTest & bits.head) != shiftTest) {
             decoderHelper(mainTree, left, bits, bitsCount, bc - 1)
@@ -210,9 +204,7 @@ class Huffman(myStr: String) {
     if (text.isEmpty) {
       0
     } else {
-      val head = text.head
-      val tail = text.tail
-      encoderOneChar(tree)(head).size + bitCount(tree, tail)
+      text.map(ch => encoderOneChar(tree)(ch).size).sum
     }
   }
 
@@ -243,16 +235,16 @@ class Huffman(myStr: String) {
 
   private def encoderOneChar(tree: CodeTree)(c: Char): Vector[Bit] = {
     tree match {
-      case Fork(left, right, _, _) =>
+      case CodeTree.Fork(left, right, _, _) =>
         left match {
-          case Fork(_, _, l_chars, _) =>
+          case CodeTree.Fork(_, _, l_chars, _) =>
             if (l_chars.contains(c)) {
               0.toByte +: encoderOneChar(left)(c)
             } else {
               1.toByte +: encoderOneChar(right)(c)
             }
 
-          case Leaf(l_char, _) =>
+          case CodeTree.Leaf(l_char, _) =>
             if (l_char.equals(c)) {
               0.toByte +: encoderOneChar(left)(c)
             } else {
@@ -260,7 +252,7 @@ class Huffman(myStr: String) {
             }
         }
 
-      case Leaf(_, _) => Vector.empty
+      case CodeTree.Leaf(_, _) => Vector.empty
     }
   }
 
@@ -278,12 +270,14 @@ object Huffman {
 
   sealed abstract class CodeTree
 
-  case class Fork(left: CodeTree, right: CodeTree, chars: Vector[Char], weight: Int) extends CodeTree
+  object CodeTree {
 
-  case class Leaf(char: Char, weight: Int) extends CodeTree
+    case class Fork(left: CodeTree, right: CodeTree, chars: Vector[Char], weight: Int) extends CodeTree
+
+    case class Leaf(char: Char, weight: Int) extends CodeTree
+
+  }
 
   case class EncodeResult(encoded: Vector[Int], bitsCount: Int)
-
-  case class Binary(value: Int, bc: Int)
 
 }
