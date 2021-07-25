@@ -13,16 +13,7 @@ class Huffman(myStr: String) {
   def getTree: CodeTree = thisTree
 
   def encode(str: String): EncodeResult = {
-    val myVec = str.toVector
-    val myBits = bitCount(thisTree, myVec)
-    if (myBits <= INT_MAX_INDEX) {
-      EncodeResult(Vector(encoder(thisTree)(myVec)), myBits)
-    } else {
-      val vecToEncode = myVec.take(INT_MAX_INDEX)
-      val encoded = encoder(thisTree)(vecToEncode)
-      val tailEncode = encode(myVec.drop(INT_MAX_INDEX).mkString)
-      EncodeResult(encoded +: tailEncode.encoded, tailEncode.bitsCount)
-    }
+    EncodeResult(processEncoder(str.toVector, pointer = 1, Vector(0)), strBitCounter(str))
   }
 
   def decode(encoded: EncodeResult): String = {
@@ -30,6 +21,60 @@ class Huffman(myStr: String) {
   }
 
   //private methods
+  private def strBitCounter(str: String): Int = {
+    val reminder = bitCount(thisTree, str.toVector) % INT_MAX_INDEX
+    if (reminder != 0) {
+      reminder
+    } else {
+      INT_MAX_INDEX
+    }
+  }
+
+  @tailrec
+  private def mergeTwoInt(n: Int, bc: Int, pointer: Int, current: Vector[Int]): Vector[Int] = {
+    if (bc == 0) {
+      current
+    } else {
+      if (pointer > INT_MAX_INDEX) {
+        mergeTwoInt(n, bc, pointer = 1, current :+ 0)
+      } else {
+        val msb = getMSB(n, bc)
+        val newNum = appendToRight(current.last, msb)
+        mergeTwoInt(n & ((1 << (bc - 1)) - 1), bc - 1, pointer + 1, current.take(current.size - 1) :+ newNum)
+      }
+    }
+  }
+
+  @tailrec
+  private def processEncoder(text: Vector[Char], pointer: Int, current: Vector[Int]): Vector[Int] = {
+    if (text.isEmpty) {
+      current
+    } else {
+      val head = text.head
+      val bc = bitCount(thisTree, Vector(head))
+      val currentEncoded = mergeTwoInt(encoder(thisTree)(Vector(head)), bc, pointer, current)
+      if (text.tail.isEmpty) {
+        currentEncoded
+      } else {
+        val newPointer = if ((bc + pointer) % INT_MAX_INDEX != 0) (bc + pointer) % INT_MAX_INDEX else 32
+        if (newPointer == 1) {
+          processEncoder(text.tail, newPointer, currentEncoded :+ 0)
+        } else {
+          processEncoder(text.tail, newPointer, currentEncoded)
+        }
+      }
+    }
+  }
+
+  private def appendToRight(num: Int, bit: Int): Int = {
+    (num << 1) + bit
+  }
+
+  private def getMSB(num: Int, bitCount: Int): Int = {
+    val shifted = 1 << (bitCount - 1)
+    if ((num & shifted) == shifted) 1 else 0
+  }
+
   private def weight(tree: CodeTree): Int = {
     tree match {
       case Leaf(_, w1) => w1
@@ -238,5 +283,7 @@ object Huffman {
   case class Leaf(char: Char, weight: Int) extends CodeTree
 
   case class EncodeResult(encoded: Vector[Int], bitsCount: Int)
+
+  case class Binary(value: Int, bc: Int)
 
 }
