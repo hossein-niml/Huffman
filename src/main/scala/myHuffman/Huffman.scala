@@ -84,31 +84,26 @@ class Huffman(myStr: String) {
     CodeTree.Fork(left, right, chars(left) ++ chars(right), weight(left) + weight(right))
   }
 
-  private def times(chars: Vector[Char]): Vector[(Char, Int)] = {
+  private def times(chars: Vector[Char]): Map[Char, Int] = {
     if (chars.isEmpty) {
-      Vector.empty
+      Map.empty
     } else {
       val ch = chars.head
       val rest = chars.tail
       val tail = times(rest)
-      tail.filter(r => r._1 != ch) :+ ((ch, findTimes(ch, tail) + 1))
+      tail.filter(r => r._1 != ch) + (ch -> (findTimes(ch, tail) + 1))
     }
   }
 
-  private def findTimes(c: Char, v: Vector[(Char, Int)]): Int = {
-    val y = v.find(r => r._1 == c)
-    if (y.isEmpty) {
-      0
-    } else {
-      y.head._2
-    }
+  private def findTimes(c: Char, v: Map[Char, Int]): Int = {
+    v.getOrElse(c, 0)
   }
 
-  private def makeOrderedLeafList(freqs: Vector[(Char, Int)]): Vector[CodeTree.Leaf] = {
+  private def makeOrderedLeafList(freqs: Map[Char, Int]): Vector[CodeTree.Leaf] = {
     if (freqs.isEmpty) {
       Vector.empty
     } else {
-      freqs.map(p => CodeTree.Leaf(p._1, p._2)).sortWith((r1, r2) => weight(r1) < weight(r2))
+      freqs.map(p => CodeTree.Leaf(p._1, p._2)).toVector.sortWith((r1, r2) => weight(r1) < weight(r2))
     }
   }
 
