@@ -31,7 +31,7 @@ class Huffman(myStr: String) {
       } else {
         val msb = getMSB(n, bc)
         val newNum = appendToRight(current.last, msb)
-        mergeTwoInt(n & ((1 << (bc - 1)) - 1), bc - 1, pointer + 1, current.take(current.size - 1) :+ newNum)
+        mergeTwoInt(n & ((1 << (bc - 1)) - 1), bc - 1, pointer + 1, current.dropRight(1) :+ newNum)
       }
     }
   }
@@ -51,11 +51,8 @@ class Huffman(myStr: String) {
         EncodeResult(currentEncoded, nextReminder)
       } else {
         val newPointer = if ((bc + pointer) % INT_MAX_INDEX != 0) (bc + pointer) % INT_MAX_INDEX else 32
-        if (newPointer == 1) {
-          processEncoder(text.tail, newPointer, currentEncoded :+ 0, nextReminder, firstTime = false)
-        } else {
-          processEncoder(text.tail, newPointer, currentEncoded, nextReminder, firstTime = false)
-        }
+        val nextCurrent = if (newPointer == 1) currentEncoded :+ 0 else currentEncoded
+        processEncoder(text.tail, newPointer, nextCurrent, nextReminder, firstTime = false)
       }
     }
   }
@@ -266,7 +263,7 @@ object Huffman {
 
   type Bit = Byte
 
-  val INT_MAX_INDEX = 32
+  private final val INT_MAX_INDEX: Int = 32
 
   sealed abstract class CodeTree
 
